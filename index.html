@@ -4,31 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Family Expense Tracker</title>
+    <!-- PWA Support -->
+    <meta name="theme-color" content="#1d4ed8">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; -webkit-tap-highlight-color: transparent; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
         .expense-card { transition: all 0.3s ease; }
         .expense-card:hover { transform: scale(1.01); box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1); }
+        html { scroll-behavior: smooth; }
+        /* Offline Indicator Style */
+        #offline-badge { display: none; }
+        body.is-offline #offline-badge { display: flex; }
     </style>
 </head>
 <body class="min-h-screen text-slate-800">
 
     <!-- Header -->
-    <header class="bg-blue-700 text-white p-6 shadow-xl mb-8">
+    <header class="bg-blue-700 text-white p-6 shadow-xl mb-8 sticky top-0 z-50">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-extrabold flex items-center gap-2">
                     <i class="fas fa-home"></i> Kudumba Selavugal
                 </h1>
-                <p class="text-blue-100 text-xs tracking-wide uppercase font-semibold">Shared Family Spending Tracker</p>
+                <div class="flex items-center gap-2">
+                    <p class="text-blue-100 text-xs tracking-wide uppercase font-semibold">Shared Tracker</p>
+                    <div id="offline-badge" class="bg-orange-500 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">OFFLINE</div>
+                </div>
             </div>
             <button onclick="exportToPDF()" class="bg-white text-blue-700 px-5 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-blue-50 transition-all shadow-lg active:scale-95">
-                <i class="fas fa-file-pdf"></i> PDF Download
+                <i class="fas fa-file-pdf"></i> PDF
             </button>
         </div>
     </header>
@@ -38,7 +50,7 @@
             
             <!-- Sidebar: Add Expense Form -->
             <div class="lg:col-span-1">
-                <div class="glass p-6 rounded-3xl shadow-md sticky top-8">
+                <div class="glass p-6 rounded-3xl shadow-md lg:sticky lg:top-28 border-2 border-blue-50">
                     <h2 class="text-xl font-bold mb-5 flex items-center gap-2 text-blue-700">
                         <i class="fas fa-plus-circle"></i> Pudhiya Selavu
                     </h2>
@@ -71,7 +83,7 @@
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date - Thaedhi</label>
                             <input type="date" id="date" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none">
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg active:scale-95 flex justify-center items-center gap-2">
+                        <button type="submit" id="saveBtn" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg active:scale-95 flex justify-center items-center gap-2">
                             <i class="fas fa-save"></i> Save Pannu
                         </button>
                     </form>
@@ -101,7 +113,6 @@
                 <div id="emptyState" class="text-center py-24 bg-white rounded-3xl border-4 border-dashed border-slate-100 hidden">
                     <i class="fas fa-receipt text-slate-200 text-6xl mb-4"></i>
                     <p class="text-slate-400 font-medium text-lg">Innum selavu ethuvum serkkala!</p>
-                    <p class="text-slate-300 text-sm">Pudhiya selavugalai add pannunga.</p>
                 </div>
             </div>
         </div>
@@ -109,7 +120,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
         // Firebase Configuration
         const firebaseConfig = {
@@ -124,24 +135,41 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const expenseCol = collection(db, 'family_expenses');
 
+        // --- OFLINE PERSISTENCE ENABLE ---
+        enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.warn("Multiple tabs open, offline persistence only works in one tab at a time.");
+            } else if (err.code == 'unimplemented') {
+                console.warn("The current browser doesn't support all of the features needed to enable persistence");
+            }
+        });
+
+        const expenseCol = collection(db, 'family_expenses');
         const form = document.getElementById('expenseForm');
         const list = document.getElementById('expenseList');
         const emptyState = document.getElementById('emptyState');
         const totalDisplay = document.getElementById('totalAmount');
         const countDisplay = document.getElementById('totalCount');
 
-        // Set default date to today
+        // Check Online/Offline status
+        window.addEventListener('online', () => document.body.classList.remove('is-offline'));
+        window.addEventListener('offline', () => document.body.classList.add('is-offline'));
+        if (!navigator.onLine) document.body.classList.add('is-offline');
+
         document.getElementById('date').valueAsDate = new Date();
 
         // Form Submit Handler
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector('button');
+            const btn = document.getElementById('saveBtn');
             const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+            
+            // UI Feedback (Offline-la irukkum podhu Loading kaatta vendam, udane save aagidum local-ah)
+            if (navigator.onLine) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+            }
 
             try {
                 await addDoc(expenseCol, {
@@ -154,24 +182,25 @@
                 });
                 form.reset();
                 document.getElementById('date').valueAsDate = new Date();
+                if(window.innerWidth < 1024) window.scrollTo({ top: 500, behavior: 'smooth' });
             } catch (err) {
                 console.error("Save Error:", err);
-                alert("Oru error vandhuruchu! Rules check pannunga.");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
         });
 
-        // Real-time updates from Firestore
-        onSnapshot(expenseCol, (snapshot) => {
+        // Real-time updates (Works from Cache when offline!)
+        onSnapshot(expenseCol, { includeMetadataChanges: true }, (snapshot) => {
             const data = [];
             snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
-            // Sort: Latest date first
             data.sort((a, b) => new Date(b.date) - new Date(a.date));
             renderList(data);
-        }, (error) => {
-            console.error("Listen error:", error);
+            
+            // Check if data is from cache or server
+            const source = snapshot.metadata.fromCache ? "local cache" : "server";
+            console.log("Data loaded from " + source);
         });
 
         function renderList(expenses) {
@@ -198,8 +227,8 @@
                         </div>
                         <div class="flex-1">
                             <h4 class="font-black text-xl text-slate-800">₹${exp.amount.toLocaleString('en-IN')}</h4>
-                            <p class="text-sm text-slate-500 font-semibold">${exp.location || 'Location Not Added'}</p>
-                            ${exp.reason ? `<p class="text-xs text-slate-400 italic mt-1 font-medium"><i class="fas fa-info-circle"></i> ${exp.reason}</p>` : ''}
+                            <p class="text-sm text-slate-500 font-semibold">${exp.location || 'No Location'}</p>
+                            ${exp.reason ? `<p class="text-xs text-slate-400 italic mt-1 font-medium bg-slate-50 p-2 rounded-lg leading-relaxed">${exp.reason}</p>` : ''}
                             <div class="flex gap-2 items-center mt-2">
                                 <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">${exp.category}</span>
                                 <span class="text-[10px] text-slate-400 font-bold"><i class="far fa-calendar"></i> ${exp.date}</span>
@@ -219,7 +248,7 @@
         }
 
         window.deleteEntry = async (id) => {
-            if (confirm("Indha selavu-va delete panna poringala?")) {
+            if (confirm("Delete panna poringala?")) {
                 try {
                     await deleteDoc(doc(db, 'family_expenses', id));
                 } catch (err) {
@@ -244,33 +273,10 @@
         window.exportToPDF = () => {
             const { jsPDF } = window.jspdf;
             const docPdf = new jsPDF();
-            
-            docPdf.setFontSize(22);
-            docPdf.setTextColor(37, 99, 235);
             docPdf.text("Family Expense Report", 14, 20);
-            
-            docPdf.setFontSize(10);
-            docPdf.setTextColor(100);
-            docPdf.text(`Report Date: ${new Date().toLocaleDateString()}`, 14, 28);
-            
-            const tableData = (window.currentData || []).map(e => [
-                e.date,
-                e.category,
-                e.location,
-                e.reason,
-                `Rs. ${e.amount}`
-            ]);
-
-            docPdf.autoTable({
-                startY: 35,
-                head: [['Date', 'Category', 'Location', 'Reason', 'Amount']],
-                body: tableData,
-                theme: 'grid',
-                headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
-                styles: { fontSize: 9 }
-            });
-
-            docPdf.save(`Kudumba_Selavu_${new Date().toISOString().split('T')[0]}.pdf`);
+            const tableData = (window.currentData || []).map(e => [e.date, e.category, e.location, e.reason, `Rs. ${e.amount}`]);
+            docPdf.autoTable({ startY: 30, head: [['Date', 'Category', 'Location', 'Reason', 'Amount']], body: tableData });
+            docPdf.save('Family_Expenses.pdf');
         };
     </script>
 </body>
