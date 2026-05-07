@@ -196,9 +196,10 @@
                         <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 text-xl">
                             <i class="fas ${getIcon(exp.category)}"></i>
                         </div>
-                        <div>
+                        <div class="flex-1">
                             <h4 class="font-black text-xl text-slate-800">₹${exp.amount.toLocaleString('en-IN')}</h4>
                             <p class="text-sm text-slate-500 font-semibold">${exp.location || 'Location Not Added'}</p>
+                            ${exp.reason ? `<p class="text-xs text-slate-400 italic mt-1 font-medium"><i class="fas fa-info-circle"></i> ${exp.reason}</p>` : ''}
                             <div class="flex gap-2 items-center mt-2">
                                 <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">${exp.category}</span>
                                 <span class="text-[10px] text-slate-400 font-bold"><i class="far fa-calendar"></i> ${exp.date}</span>
