@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,44 +10,46 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
-        .expense-card { transition: transform 0.2s, box-shadow 0.2s; }
-        .expense-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .expense-card { transition: all 0.3s ease; }
+        .expense-card:hover { transform: scale(1.01); box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 <body class="min-h-screen text-slate-800">
 
     <!-- Header -->
-    <header class="bg-blue-600 text-white p-6 shadow-lg mb-8">
+    <header class="bg-blue-700 text-white p-6 shadow-xl mb-8">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold flex items-center gap-2">
-                    <i class="fas fa-users-cog"></i> Family Expense
+                <h1 class="text-2xl font-extrabold flex items-center gap-2">
+                    <i class="fas fa-home"></i> Kudumba Selavugal
                 </h1>
-                <p class="text-blue-100 text-sm">Shared Family Spending Tracker</p>
+                <p class="text-blue-100 text-xs tracking-wide uppercase font-semibold">Shared Family Spending Tracker</p>
             </div>
-            <button onclick="exportToPDF()" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-blue-50 transition">
-                <i class="fas fa-file-pdf"></i> Download PDF
+            <button onclick="exportToPDF()" class="bg-white text-blue-700 px-5 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-blue-50 transition-all shadow-lg active:scale-95">
+                <i class="fas fa-file-pdf"></i> PDF Download
             </button>
         </div>
     </header>
 
     <main class="max-w-5xl mx-auto px-4 pb-20">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- Sidebar: Add Expense -->
-            <div class="md:col-span-1">
-                <div class="glass p-6 rounded-2xl shadow-sm sticky top-8">
-                    <h2 class="text-lg font-semibold mb-4 border-b pb-2">Add New Entry</h2>
+            <!-- Sidebar: Add Expense Form -->
+            <div class="lg:col-span-1">
+                <div class="glass p-6 rounded-3xl shadow-md sticky top-8">
+                    <h2 class="text-xl font-bold mb-5 flex items-center gap-2 text-blue-700">
+                        <i class="fas fa-plus-circle"></i> Pudhiya Selavu
+                    </h2>
                     <form id="expenseForm" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount (₹)</label>
-                            <input type="number" id="amount" required placeholder="0.00" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount (₹) - Panam</label>
+                            <input type="number" id="amount" required placeholder="0.00" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:ring-0 outline-none transition-all text-lg font-bold">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                            <select id="category" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category - Vagai</label>
+                            <select id="category" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none appearance-none">
                                 <option>Food & Dining</option>
                                 <option>Groceries</option>
                                 <option>Rent/Bills</option>
@@ -58,57 +60,58 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Location</label>
-                            <input type="text" id="location" placeholder="e.g. Saravana Stores" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Location - Edam</label>
+                            <input type="text" id="location" placeholder="e.g. Kadai Peyar" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason/Note</label>
-                            <textarea id="reason" rows="2" placeholder="Why this expense?" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Note - Kurippu</label>
+                            <textarea id="reason" rows="2" placeholder="Edharku indha selavu?" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none"></textarea>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
-                            <input type="date" id="date" required class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date - Thaedhi</label>
+                            <input type="date" id="date" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none">
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">
-                            Save Expense
+                        <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg active:scale-95 flex justify-center items-center gap-2">
+                            <i class="fas fa-save"></i> Save Pannu
                         </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Main Content: List -->
-            <div class="md:col-span-2">
-                <!-- Dashboard Summary -->
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-blue-500">
-                        <p class="text-xs text-slate-500 font-bold uppercase">Total Spend</p>
-                        <h3 class="text-2xl font-bold" id="totalAmount">₹0</h3>
+            <!-- Main Content Area -->
+            <div class="lg:col-span-2">
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-blue-500">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Moththa Selavu</p>
+                        <h3 class="text-3xl font-black text-slate-800" id="totalAmount">₹0</h3>
                     </div>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-emerald-500">
-                        <p class="text-xs text-slate-500 font-bold uppercase">Entries</p>
-                        <h3 class="text-2xl font-bold" id="totalCount">0</h3>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-emerald-500">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Entries Count</p>
+                        <h3 class="text-3xl font-black text-slate-800" id="totalCount">0</h3>
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-4" id="expenseList">
-                    <!-- Expenses will appear here -->
+                <!-- Expense List -->
+                <div class="space-y-4" id="expenseList">
+                    <!-- Cards will be injected here -->
                 </div>
 
                 <!-- Empty State -->
-                <div id="emptyState" class="text-center py-20 bg-white rounded-3xl border-2 border-dashed hidden">
-                    <i class="fas fa-receipt text-slate-300 text-5xl mb-4"></i>
-                    <p class="text-slate-500">No expenses found. Start adding some!</p>
+                <div id="emptyState" class="text-center py-24 bg-white rounded-3xl border-4 border-dashed border-slate-100 hidden">
+                    <i class="fas fa-receipt text-slate-200 text-6xl mb-4"></i>
+                    <p class="text-slate-400 font-medium text-lg">Innum selavu ethuvum serkkala!</p>
+                    <p class="text-slate-300 text-sm">Pudhiya selavugalai add pannunga.</p>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // UPDATED WITH YOUR REAL CONFIG
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyApM9gqxuGbL_IX-N0T7VheVt91I8c_4Vk",
             authDomain: "family-expense-98c48.firebaseapp.com",
@@ -121,8 +124,6 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
-        // Using a direct collection for your project to ensure simplicity
         const expenseCol = collection(db, 'family_expenses');
 
         const form = document.getElementById('expenseForm');
@@ -131,14 +132,16 @@
         const totalDisplay = document.getElementById('totalAmount');
         const countDisplay = document.getElementById('totalCount');
 
+        // Set default date to today
         document.getElementById('date').valueAsDate = new Date();
 
-        // Save Data
+        // Form Submit Handler
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerText = "Saving...";
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
 
             try {
                 await addDoc(expenseCol, {
@@ -152,25 +155,26 @@
                 form.reset();
                 document.getElementById('date').valueAsDate = new Date();
             } catch (err) {
-                console.error("Error saving:", err);
-                alert("Failed to save. Check if Firestore Rules are set to 'Test Mode'.");
+                console.error("Save Error:", err);
+                alert("Oru error vandhuruchu! Rules check pannunga.");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Save Expense";
+                btn.innerHTML = originalText;
             }
         });
 
-        // Real-time Listen
+        // Real-time updates from Firestore
         onSnapshot(expenseCol, (snapshot) => {
             const data = [];
             snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+            // Sort: Latest date first
             data.sort((a, b) => new Date(b.date) - new Date(a.date));
-            renderExpenses(data);
+            renderList(data);
         }, (error) => {
-            console.error("Firestore Listen Error:", error);
+            console.error("Listen error:", error);
         });
 
-        function renderExpenses(expenses) {
+        function renderList(expenses) {
             list.innerHTML = '';
             let total = 0;
 
@@ -186,26 +190,24 @@
             expenses.forEach(exp => {
                 total += exp.amount;
                 const card = document.createElement('div');
-                card.className = "expense-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center";
+                card.className = "expense-card bg-white p-6 rounded-3xl shadow-sm border border-slate-50 flex justify-between items-center";
                 card.innerHTML = `
-                    <div class="flex gap-4 items-center">
-                        <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                    <div class="flex gap-5 items-center">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 text-xl">
                             <i class="fas ${getIcon(exp.category)}"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-lg">₹${exp.amount.toLocaleString('en-IN')}</h4>
-                            <p class="text-sm text-slate-500 font-medium">${exp.location || 'Unknown Location'}</p>
-                            <div class="flex gap-2 items-center mt-1">
-                                <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-bold uppercase">${exp.category}</span>
-                                <span class="text-[10px] text-slate-400"><i class="far fa-calendar"></i> ${exp.date}</span>
+                            <h4 class="font-black text-xl text-slate-800">₹${exp.amount.toLocaleString('en-IN')}</h4>
+                            <p class="text-sm text-slate-500 font-semibold">${exp.location || 'Location Not Added'}</p>
+                            <div class="flex gap-2 items-center mt-2">
+                                <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">${exp.category}</span>
+                                <span class="text-[10px] text-slate-400 font-bold"><i class="far fa-calendar"></i> ${exp.date}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <button onclick="deleteEntry('${exp.id}')" class="text-slate-300 hover:text-red-500 p-2 transition">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+                    <button onclick="window.deleteEntry('${exp.id}')" class="w-10 h-10 rounded-full bg-slate-50 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                 `;
                 list.appendChild(card);
             });
@@ -216,8 +218,12 @@
         }
 
         window.deleteEntry = async (id) => {
-            if (confirm("Delete this entry?")) {
-                await deleteDoc(doc(db, 'family_expenses', id));
+            if (confirm("Indha selavu-va delete panna poringala?")) {
+                try {
+                    await deleteDoc(doc(db, 'family_expenses', id));
+                } catch (err) {
+                    console.error("Delete error:", err);
+                }
             }
         };
 
@@ -229,9 +235,9 @@
                 'Travel': 'fa-car',
                 'Shopping': 'fa-shopping-bag',
                 'Medical': 'fa-hospital',
-                'Other': 'fa-tag'
+                'Other': 'fa-receipt'
             };
-            return icons[cat] || 'fa-receipt';
+            return icons[cat] || 'fa-tag';
         }
 
         window.exportToPDF = () => {
@@ -244,7 +250,7 @@
             
             docPdf.setFontSize(10);
             docPdf.setTextColor(100);
-            docPdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+            docPdf.text(`Report Date: ${new Date().toLocaleDateString()}`, 14, 28);
             
             const tableData = (window.currentData || []).map(e => [
                 e.date,
@@ -258,11 +264,12 @@
                 startY: 35,
                 head: [['Date', 'Category', 'Location', 'Reason', 'Amount']],
                 body: tableData,
-                theme: 'striped',
-                headStyles: { fillColor: [37, 99, 235] }
+                theme: 'grid',
+                headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
+                styles: { fontSize: 9 }
             });
 
-            docPdf.save(`Family_Expenses_${new Date().toISOString().split('T')[0]}.pdf`);
+            docPdf.save(`Kudumba_Selavu_${new Date().toISOString().split('T')[0]}.pdf`);
         };
     </script>
 </body>
