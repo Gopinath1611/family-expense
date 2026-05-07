@@ -3,402 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Expense - Shared Cloud Tracker</title>
+    <title>Family Expense Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .family-gradient { background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .loader { border-top-color: #3b82f6; animation: spinner 1s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .expense-card { transition: all 0.2s ease; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .expense-card { transition: transform 0.2s, box-shadow 0.2s; }
         .expense-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
-<body class="text-slate-800 antialiased">
+<body class="min-h-screen text-slate-800">
 
-<div id="app" class="min-h-screen flex flex-col">
-    <nav class="glass border-b border-slate-200 sticky top-0 z-50 px-4 py-3">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="w-10 h-10 family-gradient rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">F</div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Family Expense</h1>
-                    <p class="text-[10px] text-blue-500 font-bold uppercase tracking-widest">Shared Cloud Sync</p>
-                </div>
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-6 shadow-lg mb-8">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fas fa-users-cog"></i> Family Expense
+                </h1>
+                <p class="text-blue-100 text-sm">Shared Family Spending Tracker</p>
             </div>
-            <button id="exportBtn" class="flex items-center gap-2 bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                PDF Report
+            <button onclick="exportToPDF()" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-blue-50 transition">
+                <i class="fas fa-file-pdf"></i> Download PDF
             </button>
         </div>
-    </nav>
+    </header>
 
-    <main class="flex-grow max-w-6xl mx-auto w-full p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <div class="lg:col-span-4 space-y-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-hidden relative">
-                <div class="absolute -top-12 -right-12 w-32 h-32 family-gradient opacity-10 rounded-full"></div>
-                <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Spending</h2>
-                <div class="text-4xl font-bold text-slate-900 mb-4" id="totalAmount">$0.00</div>
-                <div class="flex items-center justify-between">
-                    <span id="expenseCount" class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold border border-blue-100">0 records</span>
-                    <span class="text-[10px] text-slate-400 font-medium italic">Auto-Sync Enabled</span>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
-                    <div class="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-                    Add Expense
-                </h3>
-                <form id="expenseForm" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1 ml-1">Amount</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-2.5 text-slate-400 font-medium">$</span>
-                            <input type="number" step="0.01" id="amount" required class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="0.00">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
+    <main class="max-w-5xl mx-auto px-4 pb-20">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <!-- Sidebar: Add Expense -->
+            <div class="md:col-span-1">
+                <div class="glass p-6 rounded-2xl shadow-sm sticky top-8">
+                    <h2 class="text-lg font-semibold mb-4 border-b pb-2">Add New Entry</h2>
+                    <form id="expenseForm" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1 ml-1">Date</label>
-                            <input type="date" id="date" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount (₹)</label>
+                            <input type="number" id="amount" required placeholder="0.00" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1 ml-1">Category</label>
-                            <select id="category" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="Groceries">Groceries</option>
-                                <option value="Dining">Dining</option>
-                                <option value="Rent/EMI">Rent/Bills</option>
-                                <option value="Utilities">Utilities</option>
-                                <option value="Education">Education</option>
-                                <option value="Health">Health</option>
-                                <option value="Travel">Travel</option>
-                                <option value="Other">Other</option>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                            <select id="category" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option>Food & Dining</option>
+                                <option>Groceries</option>
+                                <option>Rent/Bills</option>
+                                <option>Travel</option>
+                                <option>Shopping</option>
+                                <option>Medical</option>
+                                <option>Other</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1 ml-1">Location</label>
-                        <input type="text" id="location" required class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Store name or city">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1 ml-1">Reason (Optional)</label>
-                        <textarea id="reason" rows="2" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="What was this for?"></textarea>
-                    </div>
-
-                    <button type="submit" id="submitBtn" class="w-full family-gradient text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2">
-                        Add to Shared List
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div class="lg:col-span-8 space-y-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-wrap gap-4 items-center">
-                <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar flex-grow">
-                    <button data-filter="all" class="filter-btn active bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap">All Items</button>
-                    <button data-filter="Groceries" class="filter-btn bg-slate-100 text-slate-500 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all whitespace-nowrap">Groceries</button>
-                    <button data-filter="Dining" class="filter-btn bg-slate-100 text-slate-500 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all whitespace-nowrap">Dining</button>
-                    <button data-filter="Rent/EMI" class="filter-btn bg-slate-100 text-slate-500 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all whitespace-nowrap">Rent/Bills</button>
-                </div>
-                <div class="relative w-full md:w-64">
-                    <span class="absolute left-3 top-3 text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </span>
-                    <input type="text" id="searchInput" placeholder="Search entries..." class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Location</label>
+                            <input type="text" id="location" placeholder="e.g. Saravana Stores" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason/Note</label>
+                            <textarea id="reason" rows="2" placeholder="Why this expense?" class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
+                            <input type="date" id="date" required class="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">
+                            Save Expense
+                        </button>
+                    </form>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 class="font-bold text-slate-800">Shared History</h3>
-                    <div id="syncIndicator" class="flex items-center gap-2 text-[10px] font-bold text-green-500 uppercase tracking-widest bg-green-50 px-2 py-1 rounded-md border border-green-100">
-                        <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                        Live
+            <!-- Main Content: List -->
+            <div class="md:col-span-2">
+                <!-- Dashboard Summary -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                        <p class="text-xs text-slate-500 font-bold uppercase">Total Spend</p>
+                        <h3 class="text-2xl font-bold" id="totalAmount">₹0</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-emerald-500">
+                        <p class="text-xs text-slate-500 font-bold uppercase">Entries</p>
+                        <h3 class="text-2xl font-bold" id="totalCount">0</h3>
                     </div>
                 </div>
-                <div id="expenseList" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto custom-scrollbar">
-                    <!-- Dynamic entries -->
+
+                <div class="flex flex-col gap-4" id="expenseList">
+                    <!-- Expenses will appear here -->
                 </div>
-                <div id="emptyState" class="p-20 text-center hidden">
-                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-dashed border-slate-200">
-                        <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                    </div>
-                    <p class="text-slate-500 font-bold">No entries found.</p>
-                    <p class="text-slate-400 text-sm">Add something to sync it with your family!</p>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="text-center py-20 bg-white rounded-3xl border-2 border-dashed hidden">
+                    <i class="fas fa-receipt text-slate-300 text-5xl mb-4"></i>
+                    <p class="text-slate-500">No expenses found. Start adding some!</p>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer class="p-6 text-center text-slate-400 text-[10px] font-medium uppercase tracking-[0.2em] border-t border-slate-100 mt-auto">
-        &copy; 2024 Family Expense Manager &bull; Real-time Cloud Sync
-    </footer>
-</div>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-<div id="deleteModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl scale-in transform transition-all">
-        <div class="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-4">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-        </div>
-        <h3 class="text-xl font-bold text-slate-900 mb-2">Permanently Delete?</h3>
-        <p class="text-slate-500 text-sm mb-8 leading-relaxed">This record will be removed from everyone's shared list immediately. This cannot be undone.</p>
-        <div class="flex gap-3">
-            <button id="cancelDelete" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">Keep it</button>
-            <button id="confirmDelete" class="flex-1 px-4 py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-200 hover:bg-red-600 transition-all">Delete</button>
-        </div>
-    </div>
-</div>
+        // UPDATED WITH YOUR REAL CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyApM9gqxuGbL_IX-N0T7VheVt91I8c_4Vk",
+            authDomain: "family-expense-98c48.firebaseapp.com",
+            projectId: "family-expense-98c48",
+            storageBucket: "family-expense-98c48.firebasestorage.app",
+            messagingSenderId: "888226022690",
+            appId: "1:888226022690:web:4dd8f04262f6574a69917b",
+            measurementId: "G-BNBRSQMKWM"
+        };
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, deleteDoc, onSnapshot, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'family-expense-tool-v2';
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-let expenses = [];
-let currentFilter = 'all';
-let searchQuery = '';
-let deletingId = null;
-
-// Auth Logic
-async function initAuth() {
-    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-    } else {
-        await signInAnonymously(auth);
-    }
-}
-
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // Shared Path Rule: /artifacts/{appId}/public/data/expenses
-        const expensesRef = collection(db, 'artifacts', appId, 'public', 'data', 'expenses');
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
         
-        onSnapshot(expensesRef, (snapshot) => {
-            expenses = [];
-            snapshot.forEach((doc) => {
-                expenses.push({ id: doc.id, ...doc.data() });
-            });
-            
-            expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-            renderExpenses();
-            updateStats();
-        }, (err) => {
-            console.error("Sync Error:", err);
-            const indicator = document.getElementById('syncIndicator');
-            indicator.innerText = "Sync Error";
-            indicator.classList.replace('text-green-500', 'text-red-500');
-        });
-    }
-});
+        // Using a direct collection for your project to ensure simplicity
+        const expenseCol = collection(db, 'family_expenses');
 
-const expenseForm = document.getElementById('expenseForm');
-expenseForm.onsubmit = async (e) => {
-    e.preventDefault();
-    if (!auth.currentUser) return;
+        const form = document.getElementById('expenseForm');
+        const list = document.getElementById('expenseList');
+        const emptyState = document.getElementById('emptyState');
+        const totalDisplay = document.getElementById('totalAmount');
+        const countDisplay = document.getElementById('totalCount');
 
-    const submitBtn = document.getElementById('submitBtn');
-    const originalText = submitBtn.innerText;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<div class="loader w-5 h-5 border-2 border-white/30 rounded-full mr-2"></div> Syncing...';
-
-    const payload = {
-        amount: parseFloat(document.getElementById('amount').value),
-        date: document.getElementById('date').value,
-        category: document.getElementById('category').value,
-        location: document.getElementById('location').value,
-        reason: document.getElementById('reason').value,
-        addedBy: auth.currentUser.uid,
-        createdAt: serverTimestamp()
-    };
-
-    try {
-        const expensesRef = collection(db, 'artifacts', appId, 'public', 'data', 'expenses');
-        await addDoc(expensesRef, payload);
-        expenseForm.reset();
         document.getElementById('date').valueAsDate = new Date();
-    } catch (err) {
-        console.error("Save error:", err);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerText = originalText;
-    }
-};
 
-function updateStats() {
-    const total = expenses.reduce((acc, curr) => acc + curr.amount, 0);
-    document.getElementById('totalAmount').innerText = `$${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-    document.getElementById('expenseCount').innerText = `${expenses.length} record${expenses.length === 1 ? '' : 's'}`;
-}
+        // Save Data
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerText = "Saving...";
 
-function renderExpenses() {
-    const list = document.getElementById('expenseList');
-    const emptyState = document.getElementById('emptyState');
-    
-    const filtered = expenses.filter(exp => {
-        const matchesCat = currentFilter === 'all' || exp.category === currentFilter;
-        const search = searchQuery.toLowerCase();
-        const matchesSearch = (exp.reason || "").toLowerCase().includes(search) || 
-                              (exp.location || "").toLowerCase().includes(search) ||
-                              (exp.category || "").toLowerCase().includes(search);
-        return matchesCat && matchesSearch;
-    });
-
-    if (filtered.length === 0) {
-        list.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-    }
-
-    emptyState.classList.add('hidden');
-    list.innerHTML = filtered.map(exp => `
-        <div class="px-6 py-5 flex items-center justify-between hover:bg-slate-50/80 transition-colors group">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl flex items-center justify-center ${getCategoryMeta(exp.category).bg} ${getCategoryMeta(exp.category).text} font-bold shadow-sm">
-                    ${getCategoryMeta(exp.category).icon}
-                </div>
-                <div>
-                    <div class="flex items-center gap-2 mb-0.5">
-                        <h4 class="font-bold text-slate-800 leading-tight">${exp.location}</h4>
-                        <span class="text-[9px] uppercase font-bold text-slate-400 border border-slate-100 bg-white px-1.5 py-0.5 rounded-md">${exp.category}</span>
-                    </div>
-                    <p class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-                        ${formatDate(exp.date)} ${exp.reason ? ' &bull; ' + exp.reason : ''}
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <span class="font-black text-slate-900 text-lg">$${exp.amount.toFixed(2)}</span>
-                <button onclick="window.requestDelete('${exp.id}')" class="p-2 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function getCategoryMeta(cat) {
-    const meta = {
-        Groceries: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: '🛒' },
-        Dining: { bg: 'bg-orange-50', text: 'text-orange-600', icon: '🍕' },
-        'Rent/EMI': { bg: 'bg-rose-50', text: 'text-rose-600', icon: '🏠' },
-        Utilities: { bg: 'bg-amber-50', text: 'text-amber-600', icon: '💡' },
-        Health: { bg: 'bg-pink-50', text: 'text-pink-600', icon: '🏥' },
-        Travel: { bg: 'bg-sky-50', text: 'text-sky-600', icon: '✈️' },
-        Education: { bg: 'bg-indigo-50', text: 'text-indigo-600', icon: '📚' },
-        Other: { bg: 'bg-slate-50', text: 'text-slate-600', icon: '💰' }
-    };
-    return meta[cat] || meta.Other;
-}
-
-function formatDate(dateStr) {
-    const options = { month: 'short', day: 'numeric', year: 'numeric' };
-    return new Date(dateStr).toLocaleDateString(undefined, options);
-}
-
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.onclick = () => {
-        document.querySelectorAll('.filter-btn').forEach(b => {
-            b.classList.remove('active', 'bg-blue-600', 'text-white');
-            b.classList.add('bg-slate-100', 'text-slate-500');
+            try {
+                await addDoc(expenseCol, {
+                    amount: parseFloat(document.getElementById('amount').value),
+                    category: document.getElementById('category').value,
+                    location: document.getElementById('location').value,
+                    reason: document.getElementById('reason').value,
+                    date: document.getElementById('date').value,
+                    createdAt: new Date().toISOString()
+                });
+                form.reset();
+                document.getElementById('date').valueAsDate = new Date();
+            } catch (err) {
+                console.error("Error saving:", err);
+                alert("Failed to save. Check if Firestore Rules are set to 'Test Mode'.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Expense";
+            }
         });
-        btn.classList.add('active', 'bg-blue-600', 'text-white');
-        btn.classList.remove('bg-slate-100', 'text-slate-500');
-        currentFilter = btn.dataset.filter;
-        renderExpenses();
-    };
-});
 
-document.getElementById('searchInput').oninput = (e) => {
-    searchQuery = e.target.value;
-    renderExpenses();
-};
+        // Real-time Listen
+        onSnapshot(expenseCol, (snapshot) => {
+            const data = [];
+            snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+            data.sort((a, b) => new Date(b.date) - new Date(a.date));
+            renderExpenses(data);
+        }, (error) => {
+            console.error("Firestore Listen Error:", error);
+        });
 
-window.requestDelete = (id) => {
-    deletingId = id;
-    const modal = document.getElementById('deleteModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-};
+        function renderExpenses(expenses) {
+            list.innerHTML = '';
+            let total = 0;
 
-document.getElementById('cancelDelete').onclick = () => {
-    const modal = document.getElementById('deleteModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    deletingId = null;
-};
+            if (expenses.length === 0) {
+                emptyState.classList.remove('hidden');
+                totalDisplay.innerText = "₹0";
+                countDisplay.innerText = "0";
+                return;
+            }
 
-document.getElementById('confirmDelete').onclick = async () => {
-    if (!deletingId || !auth.currentUser) return;
-    try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'expenses', deletingId);
-        await deleteDoc(docRef);
-    } catch (err) {
-        console.error("Delete error:", err);
-    } finally {
-        document.getElementById('cancelDelete').click();
-    }
-};
+            emptyState.classList.add('hidden');
+            
+            expenses.forEach(exp => {
+                total += exp.amount;
+                const card = document.createElement('div');
+                card.className = "expense-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center";
+                card.innerHTML = `
+                    <div class="flex gap-4 items-center">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                            <i class="fas ${getIcon(exp.category)}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg">₹${exp.amount.toLocaleString('en-IN')}</h4>
+                            <p class="text-sm text-slate-500 font-medium">${exp.location || 'Unknown Location'}</p>
+                            <div class="flex gap-2 items-center mt-1">
+                                <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-bold uppercase">${exp.category}</span>
+                                <span class="text-[10px] text-slate-400"><i class="far fa-calendar"></i> ${exp.date}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button onclick="deleteEntry('${exp.id}')" class="text-slate-300 hover:text-red-500 p-2 transition">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
 
-document.getElementById('exportBtn').onclick = () => {
-    if (expenses.length === 0) return;
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    doc.setFontSize(22);
-    doc.setTextColor(30, 41, 59);
-    doc.text("FAMILY EXPENSE REPORT", 14, 25);
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Report Date: ${new Date().toLocaleDateString()}`, 14, 34);
-    
-    const total = expenses.reduce((acc, curr) => acc + curr.amount, 0);
-    doc.setFontSize(14);
-    doc.setTextColor(37, 99, 235);
-    doc.text(`TOTAL EXPENDITURE: $${total.toLocaleString()}`, 130, 34);
-    
-    const tableData = expenses.map(e => [
-        formatDate(e.date), 
-        e.category, 
-        e.location, 
-        e.reason || '-', 
-        `$${e.amount.toFixed(2)}`
-    ]);
-    
-    doc.autoTable({
-        startY: 45,
-        head: [['Date', 'Category', 'Location', 'Notes', 'Amount']],
-        body: tableData,
-        headStyles: { fillColor: [37, 99, 235], fontSize: 10 },
-        theme: 'striped',
-        margin: { top: 45 }
-    });
-    
-    doc.save(`Family_Expense_Report_${new Date().toISOString().split('T')[0]}.pdf`);
-};
+            totalDisplay.innerText = `₹${total.toLocaleString('en-IN')}`;
+            countDisplay.innerText = expenses.length;
+            window.currentData = expenses;
+        }
 
-window.onload = () => {
-    initAuth();
-    document.getElementById('date').valueAsDate = new Date();
-};
-</script>
+        window.deleteEntry = async (id) => {
+            if (confirm("Delete this entry?")) {
+                await deleteDoc(doc(db, 'family_expenses', id));
+            }
+        };
+
+        function getIcon(cat) {
+            const icons = {
+                'Food & Dining': 'fa-utensils',
+                'Groceries': 'fa-shopping-basket',
+                'Rent/Bills': 'fa-file-invoice-dollar',
+                'Travel': 'fa-car',
+                'Shopping': 'fa-shopping-bag',
+                'Medical': 'fa-hospital',
+                'Other': 'fa-tag'
+            };
+            return icons[cat] || 'fa-receipt';
+        }
+
+        window.exportToPDF = () => {
+            const { jsPDF } = window.jspdf;
+            const docPdf = new jsPDF();
+            
+            docPdf.setFontSize(22);
+            docPdf.setTextColor(37, 99, 235);
+            docPdf.text("Family Expense Report", 14, 20);
+            
+            docPdf.setFontSize(10);
+            docPdf.setTextColor(100);
+            docPdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+            
+            const tableData = (window.currentData || []).map(e => [
+                e.date,
+                e.category,
+                e.location,
+                e.reason,
+                `Rs. ${e.amount}`
+            ]);
+
+            docPdf.autoTable({
+                startY: 35,
+                head: [['Date', 'Category', 'Location', 'Reason', 'Amount']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [37, 99, 235] }
+            });
+
+            docPdf.save(`Family_Expenses_${new Date().toISOString().split('T')[0]}.pdf`);
+        };
+    </script>
 </body>
 </html>
