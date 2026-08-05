@@ -3,120 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Expense Tracker</title>
+    <title>Kudumba Selavugal - 1 Rupee Kuda Kanakku</title>
     <!-- PWA Support -->
-    <meta name="theme-color" content="#1d4ed8">
+    <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF & AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <!-- FontAwesome icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
-        .expense-card { transition: all 0.3s ease; }
-        .expense-card:hover { transform: scale(1.01); box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .expense-card { transition: all 0.25s ease; }
+        .expense-card:hover { transform: translateY(-2px); box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.08); }
         html { scroll-behavior: smooth; }
-        /* Offline Indicator Style */
         #offline-badge { display: none; }
         body.is-offline #offline-badge { display: flex; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
-<body class="min-h-screen text-slate-800">
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
 
-    <!-- Header -->
-    <header class="bg-blue-700 text-white p-6 shadow-xl mb-8 sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-extrabold flex items-center gap-2">
-                    <i class="fas fa-home"></i> Kudumba Selavugal
-                </h1>
-                <div class="flex items-center gap-2">
-                    <p class="text-blue-100 text-xs tracking-wide uppercase font-semibold">Shared Tracker</p>
-                    <div id="offline-badge" class="bg-orange-500 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">OFFLINE</div>
+    <div>
+        <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-5 shadow-xl sticky top-0 z-40">
+            <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/20 shadow-inner">
+                        <i class="fas fa-wallet text-2xl text-amber-300"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-black flex items-center gap-2 tracking-tight">
+                            Kudumba Selavugal
+                        </h1>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <p class="text-blue-200 text-xs tracking-wide uppercase font-semibold">1 Rupee Kuda Kanakku • Shared Tracker</p>
+                            <div id="offline-badge" class="bg-amber-500 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-black animate-pulse">OFFLINE MODE</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button onclick="openAnalyticsModal()" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition shadow-md active:scale-95">
+                        <i class="fas fa-chart-pie text-amber-300"></i> Analytics
+                    </button>
+                    <button onclick="exportToPDF()" class="flex-1 sm:flex-none bg-white text-blue-800 px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-blue-50 transition shadow-md active:scale-95">
+                        <i class="fas fa-file-pdf text-red-500"></i> Export PDF
+                    </button>
                 </div>
             </div>
-            <button onclick="exportToPDF()" class="bg-white text-blue-700 px-5 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-blue-50 transition-all shadow-lg active:scale-95">
-                <i class="fas fa-file-pdf"></i> PDF
-            </button>
-        </div>
-    </header>
+        </header>
 
-    <main class="max-w-5xl mx-auto px-4 pb-20">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <main class="max-w-6xl mx-auto px-4 py-8 w-full">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Sidebar: Add Expense Form & Filters -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Add Form Card -->
+                    <div class="glass p-6 rounded-3xl shadow-lg border border-slate-200/80 lg:sticky lg:top-24">
+                        <div class="flex justify-between items-center mb-5">
+                            <h2 class="text-lg font-bold flex items-center gap-2 text-blue-800">
+                                <i class="fas fa-plus-circle text-blue-600"></i> Pudhiya Selavu
+                            </h2>
+                            <span class="text-[11px] bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-extrabold">Live Sync</span>
+                        </div>
+                        
+                        <form id="expenseForm" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount (₹) - Panam</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-3.5 text-slate-400 font-bold">₹</span>
+                                    <input type="number" id="amount" step="0.01" required placeholder="0.00" class="w-full pl-9 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-blue-600 focus:bg-white focus:ring-0 outline-none transition-all text-lg font-black text-slate-900">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                                    <select id="category" class="w-full p-3.5 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-blue-600 focus:bg-white outline-none text-sm font-semibold">
+                                        <option>Food & Dining</option>
+                                        <option>Groceries</option>
+                                        <option>Rent/Bills</option>
+                                        <option>Travel</option>
+                                        <option>Shopping</option>
+                                        <option>Medical</option>
+                                        <option>Entertainment</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Type</label>
+                                    <select id="expenseType" class="w-full p-3.5 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-blue-600 focus:bg-white outline-none text-sm font-semibold">
+                                        <option value="good" class="text-emerald-600 font-bold">🟢 Good / Need</option>
+                                        <option value="bad" class="text-rose-600 font-bold">🔴 Bad / Waste</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Location / Shop - Edam</label>
+                                <input type="text" id="location" placeholder="e.g. Saravana Stores / Zomato" class="w-full p-3.5 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-blue-600 focus:bg-white outline-none text-sm font-medium">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Note - Kurippu</label>
+                                <textarea id="reason" rows="2" placeholder="Edharku indha selavu?" class="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-blue-600 focus:bg-white outline-none text-sm font-medium"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date - Thaedhi</label>
+                                <input type="date" id="date" required class="w-full p-3.5 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-blue-600 focus:bg-white outline-none text-sm font-semibold">
+                            </div>
+
+                            <button type="submit" id="saveBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-bold transition shadow-lg active:scale-95 flex justify-center items-center gap-2 text-base">
+                                <i class="fas fa-save"></i> Save Pannu
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Main Content Area: Filters & List -->
+                <div class="lg:col-span-2 space-y-6">
+                    
+                    <!-- Date Range Filter Card -->
+                    <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <div class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl">
+                                    <i class="fas fa-filter text-sm"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-wide">Date Range Filter</h3>
+                                    <p class="text-xs text-slate-400">Choose custom dates to view specific totals</p>
+                                </div>
+                            </div>
+                            <button onclick="clearDateFilter()" id="clearFilterBtn" class="hidden text-xs text-rose-600 font-bold bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl transition">
+                                <i class="fas fa-times"></i> Reset Filter
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Start Date</label>
+                                <input type="date" id="filterStartDate" onchange="applyFilters()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:border-blue-600 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">End Date</label>
+                                <input type="date" id="filterEndDate" onchange="applyFilters()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:border-blue-600 outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2 overflow-x-auto pb-1 text-xs">
+                            <button onclick="setQuickFilter('today')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition">Today</button>
+                            <button onclick="setQuickFilter('thisWeek')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition">This Week</button>
+                            <button onclick="setQuickFilter('thisMonth')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition">This Month</button>
+                            <button onclick="setQuickFilter('all')" class="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition">All Time</button>
+                        </div>
+                    </div>
+
+                    <!-- Summary Stats Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 border-l-4 border-blue-600">
+                            <p class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Filtered Total</p>
+                            <h3 class="text-xl sm:text-2xl font-black text-slate-900 mt-1" id="totalAmount">₹0</h3>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 border-l-4 border-emerald-500">
+                            <p class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">🟢 Good / Need</p>
+                            <h3 class="text-lg sm:text-xl font-black text-emerald-600 mt-1" id="goodTotal">₹0</h3>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 border-l-4 border-rose-500">
+                            <p class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">🔴 Bad / Waste</p>
+                            <h3 class="text-lg sm:text-xl font-black text-rose-600 mt-1" id="badTotal">₹0</h3>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 border-l-4 border-indigo-500">
+                            <p class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Entries Count</p>
+                            <h3 class="text-xl sm:text-2xl font-black text-slate-900 mt-1" id="totalCount">0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Search & Category Filter Bar -->
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <span class="absolute left-4 top-3.5 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                            <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Search by note, location or category..." class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-blue-600 shadow-sm">
+                        </div>
+                        <select id="categoryFilter" onchange="applyFilters()" class="px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-semibold outline-none focus:border-blue-600 shadow-sm">
+                            <option value="all">All Categories</option>
+                            <option>Food & Dining</option>
+                            <option>Groceries</option>
+                            <option>Rent/Bills</option>
+                            <option>Travel</option>
+                            <option>Shopping</option>
+                            <option>Medical</option>
+                            <option>Entertainment</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Expense List Container -->
+                    <div class="space-y-4" id="expenseList">
+                        <!-- Expense cards injected dynamically -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200 hidden">
+                        <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <p class="text-slate-700 font-bold text-lg">No expenses found for this range!</p>
+                        <p class="text-slate-400 text-xs mt-1">Change your date filter or add a new expense.</p>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-12">
+        <p>Kudumba Selavugal • 1 Rupee Kuda Kanakku Tracker • Secure Cloud Sync</p>
+    </footer>
+
+    <!-- Custom Modal Dialog (Alert / Confirm replacement) -->
+    <div id="customModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-in fade-in zoom-in duration-200">
+            <div id="modalIconContainer" class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+                <i id="modalIcon" class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 id="modalTitle" class="text-lg font-black text-slate-800">Alert Title</h3>
+            <p id="modalMessage" class="text-sm text-slate-500 leading-relaxed">Modal message details go here.</p>
+            <div id="modalButtons" class="flex gap-3 pt-2">
+                <button id="modalOkBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-bold text-sm transition shadow-md">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics / Charts Modal -->
+    <div id="analyticsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-50 text-blue-600 p-3 rounded-2xl">
+                        <i class="fas fa-chart-pie text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-800">Expense Analytics</h3>
+                        <p class="text-xs text-slate-400">Category & Good/Bad Breakdown</p>
+                    </div>
+                </div>
+                <button onclick="closeAnalyticsModal()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-500 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
             
-            <!-- Sidebar: Add Expense Form -->
-            <div class="lg:col-span-1">
-                <div class="glass p-6 rounded-3xl shadow-md lg:sticky lg:top-28 border-2 border-blue-50">
-                    <h2 class="text-xl font-bold mb-5 flex items-center gap-2 text-blue-700">
-                        <i class="fas fa-plus-circle"></i> Pudhiya Selavu
-                    </h2>
-                    <form id="expenseForm" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount (₹) - Panam</label>
-                            <input type="number" id="amount" required placeholder="0.00" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:ring-0 outline-none transition-all text-lg font-bold">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category - Vagai</label>
-                            <select id="category" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none appearance-none">
-                                <option>Food & Dining</option>
-                                <option>Groceries</option>
-                                <option>Rent/Bills</option>
-                                <option>Travel</option>
-                                <option>Shopping</option>
-                                <option>Medical</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Location - Edam</label>
-                            <input type="text" id="location" placeholder="e.g. Kadai Peyar" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Note - Kurippu</label>
-                            <textarea id="reason" rows="2" placeholder="Edharku indha selavu?" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none"></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date - Thaedhi</label>
-                            <input type="date" id="date" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 outline-none">
-                        </div>
-                        <button type="submit" id="saveBtn" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg active:scale-95 flex justify-center items-center gap-2">
-                            <i class="fas fa-save"></i> Save Pannu
-                        </button>
-                    </form>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+                <div class="h-64 flex items-center justify-center">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="h-64 flex items-center justify-center">
+                    <canvas id="typeChart"></canvas>
                 </div>
             </div>
 
-            <!-- Main Content Area -->
-            <div class="lg:col-span-2">
-                <!-- Summary Stats -->
-                <div class="grid grid-cols-2 gap-4 mb-8">
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-blue-500">
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Moththa Selavu</p>
-                        <h3 class="text-3xl font-black text-slate-800" id="totalAmount">₹0</h3>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-emerald-500">
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Entries Count</p>
-                        <h3 class="text-3xl font-black text-slate-800" id="totalCount">0</h3>
-                    </div>
-                </div>
-
-                <!-- Expense List -->
-                <div class="space-y-4" id="expenseList">
-                    <!-- Cards will be injected here -->
-                </div>
-
-                <!-- Empty State -->
-                <div id="emptyState" class="text-center py-24 bg-white rounded-3xl border-4 border-dashed border-slate-100 hidden">
-                    <i class="fas fa-receipt text-slate-200 text-6xl mb-4"></i>
-                    <p class="text-slate-400 font-medium text-lg">Innum selavu ethuvum serkkala!</p>
-                </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                <h4 class="text-xs font-black uppercase text-slate-500">Summary Insights</h4>
+                <p id="analyticsInsight" class="text-sm text-slate-700 font-medium leading-relaxed">Calculating insights...</p>
             </div>
         </div>
-    </main>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
@@ -136,13 +298,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- OFLINE PERSISTENCE ENABLE ---
+        // Enable offline persistence
         enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.warn("Multiple tabs open, offline persistence only works in one tab at a time.");
-            } else if (err.code == 'unimplemented') {
-                console.warn("The current browser doesn't support all of the features needed to enable persistence");
-            }
+            console.warn("Offline persistence note:", err.code);
         });
 
         const expenseCol = collection(db, 'family_expenses');
@@ -150,14 +308,46 @@
         const list = document.getElementById('expenseList');
         const emptyState = document.getElementById('emptyState');
         const totalDisplay = document.getElementById('totalAmount');
+        const goodDisplay = document.getElementById('goodTotal');
+        const badDisplay = document.getElementById('badTotal');
         const countDisplay = document.getElementById('totalCount');
+
+        let rawExpenses = [];
+        let categoryChartInstance = null;
+        let typeChartInstance = null;
 
         // Check Online/Offline status
         window.addEventListener('online', () => document.body.classList.remove('is-offline'));
         window.addEventListener('offline', () => document.body.classList.add('is-offline'));
         if (!navigator.onLine) document.body.classList.add('is-offline');
 
+        // Set default date to today
         document.getElementById('date').valueAsDate = new Date();
+
+        // Custom Modal helper
+        window.showModal = (title, message, iconClass = 'fa-check-circle', isConfirm = false, onConfirm = null) => {
+            const modal = document.getElementById('customModal');
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            document.getElementById('modalIcon').className = `fas ${iconClass}`;
+            
+            const btnContainer = document.getElementById('modalButtons');
+            if (isConfirm) {
+                btnContainer.innerHTML = `
+                    <button id="modalCancelBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold text-sm transition">Cancel</button>
+                    <button id="modalConfirmBtn" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-2xl font-bold text-sm transition shadow-md">Delete</button>
+                `;
+                document.getElementById('modalCancelBtn').onclick = () => modal.classList.add('hidden');
+                document.getElementById('modalConfirmBtn').onclick = () => {
+                    modal.classList.add('hidden');
+                    if (onConfirm) onConfirm();
+                };
+            } else {
+                btnContainer.innerHTML = `<button id="modalOkBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-bold text-sm transition shadow-md">OK</button>`;
+                document.getElementById('modalOkBtn').onclick = () => modal.classList.add('hidden');
+            }
+            modal.classList.remove('hidden');
+        };
 
         // Form Submit Handler
         form.addEventListener('submit', async (e) => {
@@ -165,96 +355,183 @@
             const btn = document.getElementById('saveBtn');
             const originalText = btn.innerHTML;
             
-            // UI Feedback (Offline-la irukkum podhu Loading kaatta vendam, udane save aagidum local-ah)
-            if (navigator.onLine) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
-            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
 
             try {
                 await addDoc(expenseCol, {
                     amount: parseFloat(document.getElementById('amount').value),
                     category: document.getElementById('category').value,
-                    location: document.getElementById('location').value,
-                    reason: document.getElementById('reason').value,
+                    expenseType: document.getElementById('expenseType').value,
+                    location: document.getElementById('location').value.trim(),
+                    reason: document.getElementById('reason').value.trim(),
                     date: document.getElementById('date').value,
                     createdAt: new Date().toISOString()
                 });
                 form.reset();
                 document.getElementById('date').valueAsDate = new Date();
-                if(window.innerWidth < 1024) window.scrollTo({ top: 500, behavior: 'smooth' });
+                showModal("Success!", "Selavu romba nalla save aagiruchu!", "fa-check-circle");
+                if(window.innerWidth < 1024) window.scrollTo({ top: 400, behavior: 'smooth' });
             } catch (err) {
                 console.error("Save Error:", err);
+                showModal("Error", "Save panrathula sitharal irukku. Please try again.", "fa-exclamation-triangle");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
         });
 
-        // Real-time updates (Works from Cache when offline!)
+        // Real-time snapshot listener
         onSnapshot(expenseCol, { includeMetadataChanges: true }, (snapshot) => {
-            const data = [];
-            snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
-            data.sort((a, b) => new Date(b.date) - new Date(a.date));
-            renderList(data);
-            
-            // Check if data is from cache or server
-            const source = snapshot.metadata.fromCache ? "local cache" : "server";
-            console.log("Data loaded from " + source);
+            rawExpenses = [];
+            snapshot.forEach(doc => rawExpenses.push({ id: doc.id, ...doc.data() }));
+            rawExpenses.sort((a, b) => new Date(b.date) - new Date(a.date) || new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            applyFilters();
         });
+
+        // Quick Date Filter buttons
+        window.setQuickFilter = (type) => {
+            const today = new Date();
+            const startInput = document.getElementById('filterStartDate');
+            const endInput = document.getElementById('filterEndDate');
+            
+            const formatDate = (d) => d.toISOString().split('T')[0];
+
+            if (type === 'today') {
+                const dStr = formatDate(today);
+                startInput.value = dStr;
+                endInput.value = dStr;
+            } else if (type === 'thisWeek') {
+                const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
+                const lastDay = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+                startInput.value = formatDate(firstDay);
+                endInput.value = formatDate(lastDay);
+            } else if (type === 'thisMonth') {
+                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                startInput.value = formatDate(firstDay);
+                endInput.value = formatDate(lastDay);
+            } else if (type === 'all') {
+                startInput.value = '';
+                endInput.value = '';
+            }
+            applyFilters();
+        };
+
+        window.clearDateFilter = () => {
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            document.getElementById('categoryFilter').value = 'all';
+            document.getElementById('searchInput').value = '';
+            applyFilters();
+        };
+
+        // Filter and Render logic
+        window.applyFilters = () => {
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const catFilter = document.getElementById('categoryFilter').value;
+            const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            const clearBtn = document.getElementById('clearFilterBtn');
+            if (startDate || endDate || catFilter !== 'all' || searchVal) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            const filtered = rawExpenses.filter(exp => {
+                // Date range check
+                if (startDate && exp.date < startDate) return false;
+                if (endDate && exp.date > endDate) return false;
+                // Category check
+                if (catFilter !== 'all' && exp.category !== catFilter) return false;
+                // Search check
+                if (searchVal) {
+                    const matchLoc = (exp.location || '').toLowerCase().includes(searchVal);
+                    const matchReason = (exp.reason || '').toLowerCase().includes(searchVal);
+                    const matchCat = (exp.category || '').toLowerCase().includes(searchVal);
+                    if (!matchLoc && !matchReason && !matchCat) return false;
+                }
+                return true;
+            });
+
+            renderList(filtered);
+        };
 
         function renderList(expenses) {
             list.innerHTML = '';
             let total = 0;
+            let goodTotal = 0;
+            let badTotal = 0;
 
             if (expenses.length === 0) {
                 emptyState.classList.remove('hidden');
                 totalDisplay.innerText = "₹0";
+                goodDisplay.innerText = "₹0";
+                badDisplay.innerText = "₹0";
                 countDisplay.innerText = "0";
+                window.currentFilteredData = [];
                 return;
             }
 
             emptyState.classList.add('hidden');
-            
+
             expenses.forEach(exp => {
                 total += exp.amount;
+                if (exp.expenseType === 'bad') {
+                    badTotal += exp.amount;
+                } else {
+                    goodTotal += exp.amount;
+                }
+
+                const isBad = exp.expenseType === 'bad';
                 const card = document.createElement('div');
-                card.className = "expense-card bg-white p-6 rounded-3xl shadow-sm border border-slate-50 flex justify-between items-center";
+                card.className = "expense-card bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex justify-between items-center gap-4";
                 card.innerHTML = `
-                    <div class="flex gap-5 items-center">
-                        <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 text-xl">
+                    <div class="flex gap-4 items-center min-w-0">
+                        <div class="w-12 h-12 rounded-2xl ${isBad ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'} flex items-center justify-center text-lg flex-shrink-0 shadow-inner">
                             <i class="fas ${getIcon(exp.category)}"></i>
                         </div>
-                        <div class="flex-1">
-                            <h4 class="font-black text-xl text-slate-800">₹${exp.amount.toLocaleString('en-IN')}</h4>
-                            <p class="text-sm text-slate-500 font-semibold">${exp.location || 'No Location'}</p>
-                            ${exp.reason ? `<p class="text-xs text-slate-400 italic mt-1 font-medium bg-slate-50 p-2 rounded-lg leading-relaxed">${exp.reason}</p>` : ''}
-                            <div class="flex gap-2 items-center mt-2">
-                                <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">${exp.category}</span>
-                                <span class="text-[10px] text-slate-400 font-bold"><i class="far fa-calendar"></i> ${exp.date}</span>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h4 class="font-black text-lg text-slate-900">₹${exp.amount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h4>
+                                <span class="text-[10px] ${isBad ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'} px-2 py-0.5 rounded-full font-black uppercase">
+                                    ${isBad ? '🔴 Bad/Waste' : '🟢 Good/Need'}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-600 font-semibold truncate mt-0.5">${exp.location || 'No Location'}</p>
+                            ${exp.reason ? `<p class="text-xs text-slate-500 italic mt-1 font-medium bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-100 truncate">${exp.reason}</p>` : ''}
+                            <div class="flex gap-3 items-center mt-2 text-[11px] text-slate-400 font-bold">
+                                <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg">${exp.category}</span>
+                                <span><i class="far fa-calendar-alt"></i> ${exp.date}</span>
                             </div>
                         </div>
                     </div>
-                    <button onclick="window.deleteEntry('${exp.id}')" class="w-10 h-10 rounded-full bg-slate-50 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center">
-                        <i class="fas fa-trash-alt"></i>
+                    <button onclick="window.confirmDelete('${exp.id}')" class="w-10 h-10 rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-trash-alt text-xs"></i>
                     </button>
                 `;
                 list.appendChild(card);
             });
 
-            totalDisplay.innerText = `₹${total.toLocaleString('en-IN')}`;
+            totalDisplay.innerText = `₹${total.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            goodDisplay.innerText = `₹${goodTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            badDisplay.innerText = `₹${badTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             countDisplay.innerText = expenses.length;
-            window.currentData = expenses;
+            window.currentFilteredData = expenses;
         }
 
-        window.deleteEntry = async (id) => {
-            if (confirm("Delete panna poringala?")) {
+        window.confirmDelete = (id) => {
+            showModal("Delete Entry?", "Indha selavai remove panna poringala? This cannot be undone.", "fa-trash-alt", true, async () => {
                 try {
                     await deleteDoc(doc(db, 'family_expenses', id));
+                    showModal("Deleted", "Selavu delete aagiruchu.", "fa-check-circle");
                 } catch (err) {
                     console.error("Delete error:", err);
+                    showModal("Error", "Delete panrathula sitharal irukku.", "fa-exclamation-triangle");
                 }
-            }
+            });
         };
 
         function getIcon(cat) {
@@ -265,18 +542,117 @@
                 'Travel': 'fa-car',
                 'Shopping': 'fa-shopping-bag',
                 'Medical': 'fa-hospital',
+                'Entertainment': 'fa-film',
                 'Other': 'fa-receipt'
             };
             return icons[cat] || 'fa-tag';
         }
 
+        // PDF Export
         window.exportToPDF = () => {
+            const dataToExport = window.currentFilteredData || rawExpenses;
+            if (dataToExport.length === 0) {
+                showModal("No Data", "Export panna ethuvum illaye!", "fa-info-circle");
+                return;
+            }
             const { jsPDF } = window.jspdf;
             const docPdf = new jsPDF();
-            docPdf.text("Family Expense Report", 14, 20);
-            const tableData = (window.currentData || []).map(e => [e.date, e.category, e.location, e.reason, `Rs. ${e.amount}`]);
-            docPdf.autoTable({ startY: 30, head: [['Date', 'Category', 'Location', 'Reason', 'Amount']], body: tableData });
-            docPdf.save('Family_Expenses.pdf');
+            
+            docPdf.setFontSize(16);
+            docPdf.setTextColor(30, 41, 59);
+            docPdf.text("Kudumba Selavugal Report", 14, 20);
+            
+            docPdf.setFontSize(10);
+            docPdf.setTextColor(100, 116, 139);
+            docPdf.text(`Generated on: ${new Date().toLocaleDateString()} | Total Entries: ${dataToExport.length}`, 14, 28);
+
+            const tableData = dataToExport.map(e => [
+                e.date,
+                e.category,
+                e.expenseType === 'bad' ? 'Bad/Waste' : 'Good/Need',
+                e.location || '-',
+                e.reason || '-',
+                `Rs. ${e.amount.toFixed(2)}`
+            ]);
+
+            docPdf.autoTable({
+                startY: 35,
+                head: [['Date', 'Category', 'Type', 'Location', 'Note', 'Amount']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [37, 99, 235] }
+            });
+
+            docPdf.save('Kudumba_Selavugal_Report.pdf');
+        };
+
+        // Analytics Modal & Charts
+        window.openAnalyticsModal = () => {
+            const data = window.currentFilteredData || rawExpenses;
+            if (data.length === 0) {
+                showModal("No Data", "Analytics kaatta data illaye!", "fa-info-circle");
+                return;
+            }
+            document.getElementById('analyticsModal').classList.remove('hidden');
+
+            // Aggregate by category
+            const catMap = {};
+            let goodSum = 0;
+            let badSum = 0;
+
+            data.forEach(e => {
+                catMap[e.category] = (catMap[e.category] || 0) + e.amount;
+                if (e.expenseType === 'bad') badSum += e.amount;
+                else goodSum += e.amount;
+            });
+
+            const catLabels = Object.keys(catMap);
+            const catValues = Object.values(catMap);
+
+            // Category Chart
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInstance = new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catValues,
+                        backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b', '#ef4444']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Type Chart (Good vs Bad)
+            if (typeChartInstance) typeChartInstance.destroy();
+            const ctxType = document.getElementById('typeChart').getContext('2d');
+            typeChartInstance = new Chart(ctxType, {
+                type: 'pie',
+                data: {
+                    labels: ['🟢 Good / Need', '🔴 Bad / Waste'],
+                    datasets: [{
+                        data: [goodSum, badSum],
+                        backgroundColor: ['#10b981', '#f43f5e']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Insight text
+            const total = goodSum + badSum;
+            const badPct = total > 0 ? ((badSum / total) * 100).toFixed(1) : 0;
+            let insightText = `Total checked period selavu ₹${total.toLocaleString('en-IN')}. `;
+            if (badPct > 30) {
+                insightText += `⚠️ Unaku waste selavu (Bad/Impulse) ${badPct}% irukku. Konjam control pannunga!`;
+            } else {
+                insightText += `🌟 Super! Unoda selavu romba nalla control-la irukku (Waste only ${badPct}%).`;
+            }
+            document.getElementById('analyticsInsight').innerText = insightText;
+        };
+
+        window.closeAnalyticsModal = () => {
+            document.getElementById('analyticsModal').classList.add('hidden');
         };
     </script>
 </body>
